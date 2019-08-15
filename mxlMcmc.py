@@ -405,7 +405,7 @@ def estimate(
                'postMean_paramFix': postMean_paramFix, 'pdTabPostAna_paramFix': pdTabPostAna_paramFix,
                'postMean_zeta': postMean_zeta, 'pdTabPostAna_zeta': pdTabPostAna_zeta, 
                'postMean_sd': postMean_sd, 'pdTabPostAna_sd': pdTabPostAna_sd, 
-               'postMean_Omega': pdTabPostAna_Omega, 'pdTabPostAna_Omega': pdTabPostAna_Omega, 
+               'postMean_Omega': postMean_Omega, 'pdTabPostAna_Omega': pdTabPostAna_Omega, 
                'postMean_Corr': postMean_Corr, 'pdTabPostAna_Corr': pdTabPostAna_Corr,
                'postMean_paramRnd': postMean_paramRnd, 'pdTabPostAna_paramRnd': pdTabPostAna_paramRnd
                }

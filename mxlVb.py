@@ -401,7 +401,7 @@ def objectiveQnNextParamFix(
         xFix, nFix, chFixIdx, chFixIdxDiag,
         xRnd, nRnd, 
         drawsFix, nDraws, 
-        nInd, nRow, obsPerInd, rowsPerInd, weight,
+        nInd, nRow, obsPerInd, rowsPerInd,
         map_obs_to_ind, map_avail_to_obs, map_ind_to_avail, map_avail,
         slIndObs, slIndRow, slObsInd, slObsRow,
         mu0Fix, Sigma0FixInv):   
@@ -447,10 +447,6 @@ def objectiveQnNextParamFix(
                 xRnd, nRnd,
                 nInd, nRow, rowsPerInd,
                 map_avail_to_obs, slIndObs, slIndRow)
-     
-    lse *= weight 
-    grFixMu *= weight 
-    grFixCh *= weight 
     
     ###
     #Prior
@@ -480,7 +476,7 @@ def objectiveQnNextParamFix(
     return ll, gr
 
 def nextQnParamFix(
-        method, weight,
+        method,
         paramFixMu, paramFixCh,
         paramRndMu, paramRndCh, paramRndSi,
         mjiAux,
@@ -513,7 +509,7 @@ def nextQnParamFix(
                     xFix, nFix, chFixIdx, chFixIdxDiag,
                     xRnd, nRnd, 
                     drawsFix, nDraws, 
-                    nInd, nRow, obsPerInd, rowsPerInd, weight,
+                    nInd, nRow, obsPerInd, rowsPerInd,
                     map_obs_to_ind, map_avail_to_obs, map_ind_to_avail, map_avail,
                     slIndObs, slIndRow, slObsInd, slObsRow,
                     mu0Fix, Sigma0FixInv),
@@ -555,7 +551,7 @@ def objectiveQnNextParamRnd(
             paramRnd = paramRndMu_n + paramRndCh_n @ drawsRnd_n[d,:]
             vRnd_n[d, :] = xRnd_n @ paramRnd
         lse, grRndMu, grRndCh, _ = elseQmcRnd(
-                vFix_n, vRnd_n, paramRndCh_n,
+                vFix_n, vRnd_n,
                 xRnd_n, nRnd, chRndIdx,
                 drawsRnd_n, nDraws, nRow_n,
                 map_avail_to_obs_n)
@@ -696,7 +692,7 @@ def ncvmpUpdate(grMuElbo, grSigmaElbo, mu):
     return muNew, Sigma
     
 def nextNcvmpParamFix(
-        method, weight,
+        method,
         paramFixMu, paramFixCh, paramFixSi,
         paramRndMu, paramRndCh, paramRndSi,
         mjiAux,
@@ -740,9 +736,6 @@ def nextNcvmpParamFix(
                 xRnd, nRnd,
                 nInd, nRow, rowsPerInd,
                 map_avail_to_obs, slIndObs, slIndRow)
-        
-    grFixMu *= weight
-    grFixSi *= weight
     
     ###
     #Prior
@@ -866,7 +859,7 @@ def nextNcvmpParamRnd(
 ###
 
 def coordinateAscent(
-        method, vb_iter, vb_tol, weight,
+        method, vb_iter, vb_tol,
         paramFixMu, paramFixCh, paramFixSi,
         paramRndMu, paramRndCh, paramRndSi,
         mjiAux,
@@ -949,7 +942,7 @@ def coordinateAscent(
             #alpha
             if method[0] == "qn":
                 paramFixMu, paramFixCh, paramFixSi = nextQnParamFix(
-                        method, weight,
+                        method,
                         paramFixMu, paramFixCh,
                         paramRndMu, paramRndCh, paramRndSi,
                         mjiAux,
@@ -964,7 +957,7 @@ def coordinateAscent(
 
             elif method[0] == "ncvmp":
                 paramFixMu, paramFixCh, paramFixSi = nextNcvmpParamFix(
-                        method, weight,
+                        method,
                         paramFixMu, paramFixCh, paramFixSi,
                         paramRndMu, paramRndCh, paramRndSi,
                         mjiAux,
@@ -1096,8 +1089,6 @@ def estimate(
     cumRowsPerInd = np.cumsum(rowsPerInd)
     slIndRow = [slice(l,u) for l,u in zip(np.concatenate((np.array([0]), cumRowsPerInd[:-1])), 
                       cumRowsPerInd)]
-    
-    weight = 1
            
     ### 
     #Generate draws
@@ -1146,7 +1137,7 @@ def estimate(
      zetaMu, zetaSi, psi, dK,
      mjiAux,
      iters, parChange) = coordinateAscent(
-             method, vb_iter, vb_tol, weight,
+             method, vb_iter, vb_tol,
              paramFixMu, paramFixCh, paramFixSi,
              paramRndMu, paramRndCh, paramRndSi,
              mjiAux,
@@ -1184,7 +1175,7 @@ def estimate(
                'drawsFix': drawsFix, 'drawsRnd': drawsRnd,
                'paramFixMu': paramFixMu, 'paramFixCh': paramFixCh, 'paramFixSi': paramFixSi,
                'paramRndMu': paramRndMu, 'paramRndCh': paramRndCh, 'paramRndSi': paramRndSi,
-               'zetaMu': zetaMu, 'zetaSi': zetaSi, 'psi': psi, 'dK': dK,
+               'zetaMu': zetaMu, 'zetaSi': zetaSi, 'psi': psi, 'omega': omega, 'dK': dK,
                'mjiAux': mjiAux
                }
         
@@ -1326,8 +1317,8 @@ if __name__ == "__main__":
     #Generate data
     ###
     
-    N = 4000
-    T = 1
+    N = 500
+    T = 5
     NT = N * T
     J = 5
     NTJ = NT * J
@@ -1343,7 +1334,7 @@ if __name__ == "__main__":
                            [0.8, 0.8, 0.8, 1.0, 0.8],
                            [0.8, 0.8, 0.8, 0.8, 1.0]])
     
-    xFix = 0 * np.random.rand(NTJ, L)
+    xFix = np.random.rand(NTJ, L)
     xRnd = np.random.rand(NTJ, K)
 
     betaInd_tmp = true_zeta + \
@@ -1379,8 +1370,8 @@ if __name__ == "__main__":
     #Estimate MXL via VB
     ###
     
-    xFix = np.zeros((0,0)) #np.hstack((const2, const3, cost, tt))
-    xRnd = np.array(xRnd[:,:5]) #np.zeros((0,0))
+    #xFix = np.zeros((0,0)) #np.hstack((const2, const3, cost, tt))
+    #xRnd = np.array(xRnd[:,:5]) #np.zeros((0,0))
     
     mu0Fix = np.zeros((xFix.shape[1],))
     Sigma0FixInv = 1e-6 * np.eye(xFix.shape[1])
@@ -1394,7 +1385,7 @@ if __name__ == "__main__":
      cK, dK_inits, rK,
      omega, psi_inits) = inits(indID, xFix, xRnd, nu, A)
     
-    method = ('ncvmp', 'delta')
+    method = ('qn', 'qmc')
     vb_iter = 500
     vb_tol = 0.005
     
